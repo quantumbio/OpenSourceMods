@@ -1,0 +1,22 @@
+--- old/build-it	2023-11-19 09:23:14.000000000 -0500
++++ new/build-it	2023-11-19 09:23:18.000000000 -0500
+@@ -1522,8 +1522,8 @@
+ # This setting of the alias fails.  It works on the command line.
+ # WGET="LD_LIBRARY_PATH=/usr/lib wget -N -P ${AUTOBUILD_SOURCES}"
+ # WGETO="LD_LIBRARY_PATH=/usr/lib wget   -P ${AUTOBUILD_SOURCES}"
+-WGET="wget -N -P ${AUTOBUILD_SOURCES}"
+-WGETO="wget   -P ${AUTOBUILD_SOURCES}"
++WGET="wget --no-check-certificate -N -P ${AUTOBUILD_SOURCES}"
++WGETO="wget --no-check-certificate  -P ${AUTOBUILD_SOURCES}"
+ 
+ # latest version (without .tar.gz extension)
+ coot_version=$fallback_coot_version
+@@ -4359,6 +4359,8 @@
+ ##########         get Coot                                       #############
+ ###############################################################################
+ #
++coot_version=${in_coot_version}
++
+ echo BUILDING coot: version $coot_version, guile=$ENABLE_GUILE_COOT, python=$ENABLE_PYTHON_COOT
+ 
+ if [ -z "$coot_version" ] ; then
