@@ -15,11 +15,28 @@
 #include <cif++.hpp>
 #include <dssp.hpp>
 
-void StructureDSSP (gemmi::Structure& st1){
+
+// This function is used to update the SEQRES if no SEQRES is found in the PDB file AND if no FASTA is provided.
+void ApplySEQRES (gemmi::Structure& st1)
+{
+     for (gemmi::Model& model : st1.models)
+         for (gemmi::Chain& ch : model.chains)  {
+             gemmi::Entity* entity = st1.get_entity_of(ch.get_polymer());
+             if (entity && entity->full_sequence.empty() && entity->entity_type == gemmi::EntityType::Polymer)
+                 for (std::string& tmpString : ch.get_polymer().extract_sequence())
+                    entity->full_sequence.push_back (tmpString);
+         }
+}
+
+// This function is used to call DSSP on the gemmi::Structure and determine helies and sheets
+//      We should call this every time we read in a PDB, mmCIF, or MOL2 file AND each time we write a PDB or mmCIF file
+void StructureDSSP (gemmi::Structure& st1)
+{
     std::stringstream buf;
     std::stringstream obuf;
     
-    // lmw - I had started out copying CIF-based data strcutures, but it turns out that DSSP's CIF reader doesn't work with Gemmi CIF's.
+    // I had started out copying CIF-based data strcutures, but it turns out that DSSP's CIF reader doesn't work with Gemmi CIFs.
+    //      If this ever works, then we can uncomment these lines and remove those associated with the PDB file.
 //    gemmi::cif::Document doc;
 //    doc.blocks.resize(1);
 //    gemmi::MmcifOutputGroups groups(true);
@@ -45,10 +62,11 @@ void StructureDSSP (gemmi::Structure& st1){
     dssp dssp(f.front(), 1, 3, true);
     dssp.annotate(f.front(), false, true);
     
-    
     // Now read in the CIF-formatted output from DSSP and copy the helix and sheet structures (these should be complete)
    obuf << f.front();
    gemmi::Structure st_tmp = gemmi::make_structure(gemmi::cif::read_string(obuf.str()));
+   // TODO: ADD ERROR TRAPS (for disagreement between st1 and st_tmp)
+   
    st1.helices.clear();
    st1.sheets.clear();
    st1.helices = st_tmp.helices;
@@ -59,39 +77,28 @@ void StructureDSSP (gemmi::Structure& st1){
 
 int main() {
     // Read in the pdb file
-//    gemmi::Structure st1 = gemmi::read_pdb_file("5db3_out.pdb");
-    gemmi::Structure st1 = gemmi::read_pdb_file("4y5u.pdb");
+    gemmi::Structure st1 = gemmi::read_pdb_file("5db3_out.pdb");
+//    gemmi::Structure st1 = gemmi::read_pdb_file("4y5u.pdb");
     
     gemmi::setup_entities(st1);
 
-    // Create some remarkas
+    // DEMO: HOW to create some remarks in Gemmi
     std::vector<std::string> new_raw_remarks;
     new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 1");
     new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 2");
     new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 3");
-//    st1.raw_remarks = new_raw_remarks;
+//    st1.raw_remarks = new_raw_remarks;                            // To stomp on the old REMARKS when we update them.
     
     // Make sure we have standard PDB file information.
-//    st1.info["_struct_keywords.pdbx_keywords"] = "PROTEIN";     // NOTE: we should update this to be what it is (PROTEIN, DNA, RNA, mixtures)
-//    if (st1.get_info("_struct.title").empty()) st1.info["_struct.title"] = "QM/MM Refinement using DivCon Suite vXXX"; 
-
-//    st1.info["_software.name"] = "DivCon";
-//    st1.info["_software.version"] = "DEV.1234";
+    st1.info["_struct_keywords.pdbx_keywords"] = "PROTEIN";     // NOTE: we should update this to be what it is (PROTEIN, DNA, RNA, mixtures)
+    if (st1.get_info("_struct.title").empty()) st1.info["_struct.title"] = "QM/MM Refinement using DivCon Suite vXXX"; 
 
     // Use DSSP to obtain secondary structures   
-//    StructureDSSP (st1);
-
-    // If the SEQRES is not set & no fasta provided, then set it to the sequence we know.
-//     for (gemmi::Model& model : st1.models)
-//         for (gemmi::Chain& ch : model.chains){
-//             gemmi::Entity* entity = st1.get_entity_of(ch.get_polymer());
-//             if (entity->full_sequence.empty() && entity->entity_type == gemmi::EntityType::Polymer)
-//                 for (std::string& tmpString : ch.get_polymer().extract_sequence())
-//                     entity->full_sequence.push_back (tmpString);
-//         }
+    StructureDSSP (st1);
     
+    // Update the secondary structure to be complete
+    ApplySEQRES (st1);
     
-    // Ok, time to write:
     std::ofstream of1("output.pdb");
     gemmi::PdbWriteOptions opt=gemmi::PdbWriteOptions();
     write_pdb(st1, of1, opt);
@@ -103,8 +110,6 @@ int main() {
     groups.auth_all = true;
     gemmi::update_mmcif_block(st1, doc.blocks[0], groups);    
     gemmi::cif::write_cif_to_stream(of2, doc, gemmi::cif::WriteOptions());
-
-    
 
     return 0;
 }
