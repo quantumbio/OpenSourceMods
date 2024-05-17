@@ -35,8 +35,8 @@ void StructureDSSP (gemmi::Structure& st1){
     opt.link_records = false;
     opt.cispep_records = false;
     opt.end_record = false;
-    std::vector<std::string> tmp_raw_remarks = st1.raw_remarks;   // DSSP's PDB reader doesn't like Gemmi REMARKS
-    st1.raw_remarks.clear();
+    std::vector<std::string> tmp_raw_remarks = st1.raw_remarks;   
+    st1.raw_remarks.clear();                                        // DSSP's PDB reader doesn't like Gemmi REMARKS
     write_pdb(st1, buf, opt);
     st1.raw_remarks = tmp_raw_remarks;
 
@@ -53,115 +53,7 @@ void StructureDSSP (gemmi::Structure& st1){
    st1.sheets.clear();
    st1.helices = st_tmp.helices;
    st1.sheets = st_tmp.sheets;
-    
-    // OLD CODE ALERT: the code below was the piece-wise attempt before we tried the copy above. If the copy doesn't work, we can do the one below.
-
-// std::cout << f.front() << std::endl;
-    
-//    dssp.write_legacy_output(obuf);
-//    std::cout << obuf.str() << std::endl;
-//    std::cout << f.front() << std::endl;
-    
-//    obuf << f.front();
-    
-//    gemmi::Structure st_tmp = gemmi::make_structure(gemmi::cif::read_string(obuf.str()));
-
-// dssp.write_legacy_output(std::cout);
-
-
-
-//     if (dssp.empty())   {
-//         std::cout << "No secondary structure information found" << std::endl; 
-//     } else {
-//     // Go through all of the Helices from DSSP and populate gemmi::Structure Helices
-//     	auto st = dssp.begin(), lt = st;
-// 		auto lastSS = st->type();
-// 
-// 		for (auto t = dssp.begin();; lt = t, ++t)
-// 		{
-// 			bool stop = t == dssp.end();
-// 
-// 			bool flush = (stop or t->type() != lastSS);
-// 
-// 			if (flush and lastSS != dssp::structure_type::Loop)
-// 			{
-// 				auto &rb = *st;
-// 				auto &re = *lt;
-// 
-// 				int id = 0;
-// 				switch (lastSS)
-// 				{
-// 					case dssp::structure_type::Helix_3:
-// 						id = gemmi::Helix::HelixClass::R310;    // HELX_RH_3T_P
-// 						break;
-// 
-// 					case dssp::structure_type::Alphahelix:
-// 						id = gemmi::Helix::HelixClass::RAlpha;  // HELX_RH_AL_P
-// 						break;
-// 
-// 					case dssp::structure_type::Helix_5:
-// 						id = gemmi::Helix::HelixClass::RPi;     // HELX_RH_PI_P
-// 						break;
-// 
-// 					case dssp::structure_type::Helix_PPII:
-// 						id = gemmi::Helix::HelixClass::HelixPolyProlineNone;    // HELX_LH_PP_P
-// 						break;
-// 				}
-// 				if (id > 0) {
-//                     gemmi::Helix helix;
-//                     helix.start.chain_name = rb.auth_asym_id();
-//                     helix.start.res_id = gemmi::pdb_impl::read_res_id(std::to_string(rb.auth_seq_id()).c_str(),rb.compound_id().c_str());
-//                     helix.end.chain_name = re.auth_asym_id();
-//                     helix.end.res_id = gemmi::pdb_impl::read_res_id(std::to_string(re.auth_seq_id()).c_str(),re.compound_id().c_str());
-//                     helix.set_helix_class_as_int(id);
-//                     st1.helices.emplace_back(helix);
-//                 } else {
-//                     id = 0;
-//                     switch (lastSS)
-//                     {
-//                         case dssp::structure_type::Strand:
-// //                        case dssp::structure_type::Betabridge:
-//                             id = 10;
-//                             break;
-//                     }
-//                     if (id > 0) {
-//                           gemmi::Sheet& sheet = gemmi::impl::find_or_add(st1.sheets, sheet_id);
-//                           sheet.strands.emplace_back();
-//                           gemmi::Sheet::Strand& strand = sheet.strands.back();
-//                           strand.start.chain_name = rb.auth_asym_id();
-//                           strand.start.res_id = gemmi::pdb_impl::read_res_id(std::to_string(rb.auth_seq_id()).c_str(),rb.compound_id().c_str());
-//                           strand.end.chain_name = re.auth_asym_id();
-//                           strand.end.res_id = gemmi::pdb_impl::read_res_id(std::to_string(re.auth_seq_id()).c_str(),re.compound_id().c_str());
-//                           strand.sense = 0;
-//                     }                
-//                 }
-// /*
-// 				if (foundTypes.count(id) == 0)
-// 				{
-// 					structConfType.emplace({ { "id", id },
-// 						{ "criteria", "DSSP" } });
-// 					foundTypes[id] = 1;
-// 				}
-// */
-// 				st = t;
-// 			}
-// 
-// 			if (stop)
-// 				break;
-// 
-// 			if (lastSS != t->type())
-// 			{
-// 				st = t;
-// 				lastSS = t->type();
-// 			}
-// 		}
-//     
-//     // Go through all of the Sheets from DSSP and populate gemmi::Structure Sheets
-// 
-//     }
-// 
-
-    
+        
 }
 
 
