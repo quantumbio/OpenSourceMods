@@ -15,6 +15,8 @@
 #include <cif++.hpp>
 #include <dssp.hpp>
 
+// NOTE: to Compile:
+//  $ g++ -std=c++20 gemmi_dssp.cpp -lcifpp -ldssp -lgemmi_cpp -lz
 
 // This function is used to update the SEQRES if no SEQRES is found in the PDB file AND if no FASTA is provided.
 void ApplySEQRES (gemmi::Structure& st1)
@@ -29,11 +31,16 @@ void ApplySEQRES (gemmi::Structure& st1)
 }
 
 // This function is used to call DSSP on the gemmi::Structure and determine helies and sheets
-//      We should call this every time we read in a PDB, mmCIF, or MOL2 file AND each time we write a PDB or mmCIF file
+//      We should call this every time we read in a PDB, mmCIF, or MOL2 file and each time we write a PDB or mmCIF file
+//          There is some below noted overhead due to DSSP's PDB->CIF reader which appears to be very slow. 
+//          Therefore, we may only want to do this on READ when we think we need the data. If not then skip it. However, we should do it on write for completeness of the PDB/mmCIF file.
 void StructureDSSP (gemmi::Structure& st1)
 {
     std::stringstream buf;
     std::stringstream obuf;
+    
+    // Originally, I had explored the use of the DSSP Structure/model data structures, but this will take a lot more work and it isn't clear if it will work as well or at all.
+    //      IF we end up finding the DSSP is useful for our predictions, then perhaps it would be useful to explore and/or layer on a proper API.
     
     // I had started out copying CIF-based data strcutures, but it turns out that DSSP's CIF reader doesn't work with Gemmi CIFs.
     //      If this ever works, then we can uncomment these lines and remove those associated with the PDB file.
@@ -58,7 +65,9 @@ void StructureDSSP (gemmi::Structure& st1)
     st1.raw_remarks = tmp_raw_remarks;
 
     // Now use DSSP's tools to process the PDB file.
+        // NOTE: The CIF++ PDB->CIF reader is extremely slow - may want to replace this with the dssp MM structure approach (but it's unclear if that will be better and it's clearly harder to implement)
     cif::file f = cif::pdb::read(buf);   
+
     dssp dssp(f.front(), 1, 3, true);
     dssp.annotate(f.front(), false, true);
     
@@ -71,7 +80,6 @@ void StructureDSSP (gemmi::Structure& st1)
    st1.sheets.clear();
    st1.helices = st_tmp.helices;
    st1.sheets = st_tmp.sheets;
-        
 }
 
 
