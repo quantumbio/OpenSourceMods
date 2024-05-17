@@ -1,3 +1,6 @@
+// NOTE: to Compile:
+//  $ g++ -std=c++20 gemmi_dssp.cpp -lcifpp -ldssp -lgemmi_cpp -lz
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -14,9 +17,6 @@
 
 #include <cif++.hpp>
 #include <dssp.hpp>
-
-// NOTE: to Compile:
-//  $ g++ -std=c++20 gemmi_dssp.cpp -lcifpp -ldssp -lgemmi_cpp -lz
 
 // This function is used to update the SEQRES if no SEQRES is found in the PDB file AND if no FASTA is provided.
 void ApplySEQRES (gemmi::Structure& st1)
