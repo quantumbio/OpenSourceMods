@@ -71,6 +71,8 @@ void StructureDSSP (gemmi::Structure& st1)
     dssp dssp(f.front(), 1, 3, true);
     dssp.annotate(f.front(), false, true);
     
+    // TODO: f.front() sheets do not have sense set because Gemmi-CIF uses _struct_sheet_order but DSSP doesn't set that. Instead, it uses _dssp_struct_ladder. So to fix this, need to copy _dssp_struct_ladder -> _struct_sheet_order.
+    
     // Now read in the CIF-formatted output from DSSP and copy the helix and sheet structures (these should be complete)
    obuf << f.front();
    gemmi::Structure st_tmp = gemmi::make_structure(gemmi::cif::read_string(obuf.str()));
