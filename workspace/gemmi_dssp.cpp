@@ -1,10 +1,16 @@
 // NOTE: to Compile:
-//  $ g++ -std=c++20 gemmi_dssp.cpp -lcifpp -ldssp -lgemmi_cpp -lz
+//  $ g++ -std=c++20 gemmi_dssp.cpp -o gemmi_dssp -lcifpp -ldssp -lgemmi_cpp -lz
+
+// On my laptop, with a local build of dssp and gemmi, I use this approach:
+//      $ g++ -std=c++20 gemmi_dssp.cpp -o gemmi_dssp -lcifpp -ldssp -lgemmi_cpp -lz -Igemmi/include -Idssp/build/_deps/cifpp-src/include -Idssp/libdssp/include -Ldssp/build/_deps/cifpp-build -Ldssp/build/libdssp -Lgemmi/
+//      $ export LIBCIFPP_DATA_DIR=${PWD}/dssp/build/_deps/cifpp-src/rsrc
+//      $ ./gemmi_dssp 
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 #include <gemmi/model.hpp>    // for Structure, impl::find_or_add
 #include <gemmi/pdb.hpp>     // to read
@@ -85,41 +91,57 @@ void StructureDSSP (gemmi::Structure& st1)
 }
 
 
-int main() {
-    // Read in the pdb file
-    gemmi::Structure st1 = gemmi::read_pdb_file("5db3_out.pdb");
-//    gemmi::Structure st1 = gemmi::read_pdb_file("4y5u.pdb");
+int main(int argc, char *argv[]) {
+    std::string infilename;
+    int return_status = 1;
+    if (argc == 2) { 
+        infilename = argv[1];
     
-    gemmi::setup_entities(st1);
-
-    // DEMO: HOW to create some remarks in Gemmi
-    std::vector<std::string> new_raw_remarks;
-    new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 1");
-    new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 2");
-    new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 3");
-//    st1.raw_remarks = new_raw_remarks;                            // To stomp on the old REMARKS when we update them.
+        // Read in the pdb file
+        std::cout << "READING old PDBfile: " << infilename << std::endl;
+        gemmi::Structure st1 = gemmi::read_pdb_file(infilename);
+    //    gemmi::Structure st1 = gemmi::read_pdb_file("4y5u.pdb");
+        
+        gemmi::setup_entities(st1);
     
-    // Make sure we have standard PDB file information.
-    st1.info["_struct_keywords.pdbx_keywords"] = "PROTEIN";     // NOTE: we should update this to be what it is (PROTEIN, DNA, RNA, mixtures)
-    if (st1.get_info("_struct.title").empty()) st1.info["_struct.title"] = "QM/MM Refinement using DivCon Suite vXXX"; 
-
-    // Use DSSP to obtain secondary structures   
-    StructureDSSP (st1);
+        // DEMO: HOW to create some remarks in Gemmi
+        std::vector<std::string> new_raw_remarks;
+        new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 1");
+        new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 2");
+        new_raw_remarks.push_back("REMARK   TEST THIS IS OURS 3");
+    //    st1.raw_remarks = new_raw_remarks;                            // To stomp on the old REMARKS when we update them.
+        
+        // Make sure we have standard PDB file information.
+        st1.info["_struct_keywords.pdbx_keywords"] = "PROTEIN";     // NOTE: we should update this to be what it is (PROTEIN, DNA, RNA, mixtures)
+        if (st1.get_info("_struct.title").empty()) st1.info["_struct.title"] = "QM/MM Refinement using DivCon Suite vXXX"; 
     
-    // Update the secondary structure to be complete
-    ApplySEQRES (st1);
+        // Use DSSP to obtain secondary structures   
+        StructureDSSP (st1);
+        
+        // Update the secondary structure to be complete
+        ApplySEQRES (st1);
+        
+        std::string outpdbname = std::filesystem::path(infilename).stem().string() + "-dssp.pdb";
+        std::cout << "WRITING new PDBfile: " << outpdbname << std::endl;
+        std::ofstream of1(outpdbname);
+        gemmi::PdbWriteOptions opt=gemmi::PdbWriteOptions();
+        write_pdb(st1, of1, opt);
     
-    std::ofstream of1("output.pdb");
-    gemmi::PdbWriteOptions opt=gemmi::PdbWriteOptions();
-    write_pdb(st1, of1, opt);
+        std::string outcifname = std::filesystem::path(infilename).stem().string() + "-dssp.cif";
+        std::cout << "WRITING new CIFfile: " << outcifname << std::endl;
+        std::ofstream of2(outcifname);
+        gemmi::cif::Document doc;
+        doc.blocks.resize(1);
+        gemmi::MmcifOutputGroups groups(true);
+        groups.auth_all = true;
+        gemmi::update_mmcif_block(st1, doc.blocks[0], groups);    
+        gemmi::cif::write_cif_to_stream(of2, doc, gemmi::cif::WriteOptions());
+        return_status = 0;
+    }
+    else
+    {
+        std::cout << "ERROR: gemmi_dssp requires a pdbfile and only a pdbfile as input:\n\t$ gemmi_dssp infile.pdb" << std::endl;
+    }
 
-    std::ofstream of2("output.cif");
-    gemmi::cif::Document doc;
-    doc.blocks.resize(1);
-    gemmi::MmcifOutputGroups groups(true);
-    groups.auth_all = true;
-    gemmi::update_mmcif_block(st1, doc.blocks[0], groups);    
-    gemmi::cif::write_cif_to_stream(of2, doc, gemmi::cif::WriteOptions());
-
-    return 0;
+    return return_status;
 }
