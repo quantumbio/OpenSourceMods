@@ -41,22 +41,6 @@ int main(int argc, char* argv[]) {
         gemmi::write_pdb(st, fp, opt);
         std::cout << "Wrote PDB → " << out << std::endl;
     }
-    /*
-    else if (out.ends_with(".cif")) {
-        std::ofstream fc(out);
-        // Setup entity metadata (SEQRES, chains, etc.)
-        st.setup_entities();  // Correct
-
-        // Convert to mmCIF block
-        gemmi::cif::Block block = st.make_mmcif_block();
-        gemmi::cif::Document doc;
-        doc.blocks.push_back(std::move(block));
-
-        // Write the CIF
-        gemmi::cif::write_cif_to_stream(fc, doc);
-        std::cout << "Wrote mmCIF → " << out << std::endl;
-    }
-    */
     else {
         std::cerr << "Unsupported output format. Use .pdb or .cif\n";
         return 1;
